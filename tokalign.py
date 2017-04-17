@@ -1,6 +1,7 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 import heapq
+import logging
 import sys
 
 from functools import total_ordering
@@ -101,7 +102,7 @@ def align(txt1, txt2):
         if hypo.discarded:
             continue
 
-        print("\n\nExpanding:\n" + str(hypo), file=sys.stderr)
+        logging.debug("Expanding:" + str(hypo))
 
         if hypo.pos1 == 0 and hypo.pos2 == 0:
             break
@@ -111,16 +112,16 @@ def align(txt1, txt2):
             if updated is not None:
                 existing = recomb.get(updated.recombination_key())
                 if existing is None:
-                    print("Adding: " + str(updated), file=sys.stderr)
+                    logging.debug("Adding: " + str(updated))
                     heapq.heappush(queue, updated)
                     recomb[updated.recombination_key()] = updated
                 elif existing.total_cost > updated.total_cost:
-                    print("Recombining: " + str(updated), file=sys.stderr)
+                    logging.debug("Recombining: " + str(updated))
                     existing.discarded = True
                     heapq.heappush(queue, updated)
                     recomb[updated.recombination_key()] = updated
                 else:
-                    print("Discarding: " + str(updated), file=sys.stderr)
+                    logging.debug("Discarding: " + str(updated))
 
     alignments = []
     while hypo is not None:
@@ -133,6 +134,8 @@ def align(txt1, txt2):
 
 
 def main():
+    logging.basicConfig(format='%(asctime)s %(message)s')
+
     if len(sys.argv) != 3:
         print("Usage: tokalign.py file1 file2", file=sys.stderr)
         sys.exit(1)
