@@ -16,7 +16,7 @@ class LinkSame:
             return None
 
         if txt1[hypo.pos1] == txt2[hypo.pos2]:
-            ext = (txt1[hypo.pos1], txt2[hypo.pos2])
+            ext = (hypo.pos1 + len(txt1), hypo.pos2 + len(txt2))
             return Hypothesis(hypo.cost + self.cost, hypo.pos1 + 1, hypo.pos2 + 1, ext, hypo)
         else:
             return None
@@ -31,7 +31,7 @@ class LinkDifferent:
             return None
 
         if txt1[hypo.pos1] != txt2[hypo.pos2]:
-            ext = (txt1[hypo.pos1], txt2[hypo.pos2])
+            ext = (hypo.pos1 + len(txt1), hypo.pos2 + len(txt2))
             return Hypothesis(hypo.cost + self.cost, hypo.pos1 + 1, hypo.pos2 + 1, ext, hypo)
         else:
             return None
@@ -45,7 +45,7 @@ class Skip1:
         if hypo.pos1 >= 0:
             return None
 
-        ext = (txt1[hypo.pos1], "")
+        ext = (hypo.pos1 + len(txt1), None)
         return Hypothesis(hypo.cost + self.cost, hypo.pos1 + 1, hypo.pos2, ext, hypo)
 
 
@@ -57,23 +57,23 @@ class Skip2:
         if hypo.pos2 >= 0:
             return None
 
-        ext = ("", txt2[hypo.pos2])
+        ext = (None, hypo.pos2 + len(txt2))
         return Hypothesis(hypo.cost + self.cost, hypo.pos1, hypo.pos2 + 1, ext, hypo)
 
 
 @total_ordering
 class Hypothesis:
-    def __init__(self, cost, pos1, pos2, ext, prev):
+    def __init__(self, cost, pos1, pos2, alignment, prev):
         self.cost = cost
         self.pos1 = pos1
         self.pos2 = pos2
-        self.ext = ext
+        self.alignment = alignment
         self.prev = prev
         self.total_cost = self.cost + self._future_cost(pos1, pos2)
         self.discarded = False
 
     def recombination_key(self):
-        return (self.pos1, self.pos2, self.ext)
+        return (self.pos1, self.pos2, self.alignment)
 
     def _future_cost(self, pos1, pos2):
         return abs(pos1 - pos2)
@@ -82,7 +82,7 @@ class Hypothesis:
         return str(self)
 
     def __str__(self):
-        return "Hypothesis(%.2f, %.2f, %d, %d, %s)" % (self.total_cost, self.cost, self.pos1, self.pos2, self.ext)
+        return "Hypothesis(%.2f, %.2f, %d, %d, %s)" % (self.total_cost, self.cost, self.pos1, self.pos2, self.alignment)
 
     def __eq__(self, other):
         return self.total_cost == other.total_cost
@@ -125,8 +125,8 @@ def align(txt1, txt2):
 
     alignments = []
     while hypo is not None:
-        if hypo.ext is not None:
-            alignments.append(hypo.ext)
+        if hypo.alignment is not None:
+            alignments.append(hypo.alignment)
         hypo = hypo.prev
 
     alignments.reverse()
